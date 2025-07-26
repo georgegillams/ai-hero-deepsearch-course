@@ -8,15 +8,37 @@ import { z } from "zod";
 import { model } from "~/models";
 import { searchSerper } from "~/serper";
 import { auth } from "~/server/auth";
+import { addUserRequest, canUserMakeRequest } from "~/server/db/queries";
 
 export const maxDuration = 60;
 
 export async function POST(request: Request) {
   // Check if user is authenticated
   const session = await auth();
-  if (!session?.user) {
+  if (!session?.user?.id) {
     return new Response("Unauthorized", { status: 401 });
   }
+
+  // Check rate limiting
+  const rateLimitCheck = await canUserMakeRequest(session.user.id);
+  if (!rateLimitCheck.allowed) {
+    return new Response(
+      JSON.stringify({
+        error: "Rate limit exceeded",
+        message: rateLimitCheck.reason,
+        requestCount: rateLimitCheck.requestCount,
+      }),
+      {
+        status: 429,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      },
+    );
+  }
+
+  // Record the request
+  await addUserRequest(session.user.id, "/api/chat");
 
   const body = (await request.json()) as {
     messages: Array<Message>;

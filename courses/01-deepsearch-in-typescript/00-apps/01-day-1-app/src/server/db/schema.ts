@@ -1,18 +1,17 @@
+import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
 import { relations, sql } from "drizzle-orm";
 import {
+  boolean,
   index,
   integer,
   pgTableCreator,
   primaryKey,
+  serial,
   text,
   timestamp,
   varchar,
-  json,
-  boolean,
-  serial,
 } from "drizzle-orm/pg-core";
 import { type AdapterAccount } from "next-auth/adapters";
-import type { InferSelectModel, InferInsertModel } from "drizzle-orm";
 
 /**
  * This is an example of how to use the multi-project schema feature of Drizzle ORM. Use the same
@@ -39,6 +38,7 @@ export const users = createTable("user", {
 
 export const usersRelations = relations(users, ({ many }) => ({
   accounts: many(accounts),
+  requests: many(userRequests),
 }));
 
 export const accounts = createTable(
@@ -112,6 +112,33 @@ export const verificationTokens = createTable(
   }),
 );
 
+export const userRequests = createTable(
+  "user_request",
+  {
+    id: serial("id").primaryKey(),
+    userId: varchar("user_id", { length: 255 })
+      .notNull()
+      .references(() => users.id),
+    requestedAt: timestamp("requested_at", {
+      mode: "date",
+      withTimezone: true,
+    })
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
+    endpoint: varchar("endpoint", { length: 255 }).notNull(),
+  },
+  (userRequest) => ({
+    userIdIdx: index("user_request_user_id_idx").on(userRequest.userId),
+    requestedAtIdx: index("user_request_requested_at_idx").on(
+      userRequest.requestedAt,
+    ),
+  }),
+);
+
+export const userRequestsRelations = relations(userRequests, ({ one }) => ({
+  user: one(users, { fields: [userRequests.userId], references: [users.id] }),
+}));
+
 export declare namespace DB {
   export type User = InferSelectModel<typeof users>;
   export type NewUser = InferInsertModel<typeof users>;
@@ -126,4 +153,7 @@ export declare namespace DB {
   export type NewVerificationToken = InferInsertModel<
     typeof verificationTokens
   >;
+
+  export type UserRequest = InferSelectModel<typeof userRequests>;
+  export type NewUserRequest = InferInsertModel<typeof userRequests>;
 }

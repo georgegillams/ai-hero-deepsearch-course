@@ -1,8 +1,9 @@
 ---
-description: 
-globs: 
+description:
+globs:
 alwaysApply: true
 ---
+
 ## Tools
 
 Vercel AI SDK, using `ai` for the backend and `@ai-sdk/react` for the frontend.
@@ -32,4 +33,4 @@ Here are the important files in the repo.
 
 ## Scripts
 
-`pnpm run db:push` can be used to migrate the Postgres database using the drizzle schema. Run this after changes to the drizzle schema.
+`yarn run db:push` can be used to migrate the Postgres database using the drizzle schema. Run this after changes to the drizzle schema.

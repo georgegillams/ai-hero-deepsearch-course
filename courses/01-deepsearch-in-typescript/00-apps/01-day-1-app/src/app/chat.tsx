@@ -1,6 +1,7 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
+import type { Message } from "ai";
 import { Loader2 } from "lucide-react";
 import { ChatMessage } from "~/components/chat-message";
 import { SignInModal } from "~/components/sign-in-modal";
@@ -11,8 +12,27 @@ interface ChatProps {
 }
 
 export const ChatPage = ({ userName, isAuthenticated }: ChatProps) => {
-  const { messages, input, handleInputChange, handleSubmit, isLoading } =
+  const { messages, input, handleInputChange, handleSubmit, isLoading, error } =
     useChat();
+  console.log(`messages`, messages);
+
+  // Create error message when there's an error
+  const errorMessage: Message | null = error
+    ? {
+        id: `error-${Date.now()}`,
+        role: "assistant",
+        content: `❌ **Error**: ${error.message || "An error occurred while processing your request. Please try again."}`,
+        parts: [
+          {
+            type: "text",
+            text: `❌ **Error**: ${error.message || "An error occurred while processing your request. Please try again."}`,
+          },
+        ],
+      }
+    : null;
+
+  // Combine regular messages with error message
+  const allMessages = errorMessage ? [...messages, errorMessage] : messages;
 
   return (
     <>
@@ -22,9 +42,13 @@ export const ChatPage = ({ userName, isAuthenticated }: ChatProps) => {
           role="log"
           aria-label="Chat messages"
         >
-          {messages.map((message, index) => {
+          {allMessages.map((message, index) => {
             return (
-              <ChatMessage key={index} message={message} userName={userName} />
+              <ChatMessage
+                key={message.id || index}
+                message={message}
+                userName={userName}
+              />
             );
           })}
         </div>

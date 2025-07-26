@@ -25,4 +25,5 @@ h-8 w-8 -> size-8
 
 abc?: string; -> abc: string;
 
-- Use pnpm for package manager
+- Use yarn for package manager
+- Never run build, start, open, or git commands
